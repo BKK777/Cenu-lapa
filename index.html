@@ -145,7 +145,7 @@
     <h1>Cenu lapa</h1>
 
     <div class="subtitle">
-        Automātiska cenu lapas izveide no Raw_data
+        Automātiska cenu lapas izveide no List1
     </div>
 
 
@@ -350,26 +350,26 @@ async function readExcel(event) {
 
 
         /*
-        Meklējam Raw_data sheet
+        Meklējam List1 sheet
         */
 
         const sheet =
             workbook.Sheets[
-                "Raw_data"
+                "List1"
             ];
 
 
         if (!sheet) {
 
             throw new Error(
-                'Excel failā nav atrasta lapa "Raw_data".'
+                'Excel failā nav atrasta lapa "List1".'
             );
 
         }
 
 
         /*
-        Raw_data headers atrodas 2. rindā.
+        List1 headers atrodas 2. rindā.
 
         range: 1 nozīmē -
         sākam lasīt no Excel 2. rindas.
@@ -463,7 +463,7 @@ function processRawData(rows) {
         /*
         Šeit svarīgs moments:
 
-        Raw_data ir 2 Group kolonnas.
+        List1 ir 2 Group kolonnas.
 
         SheetJS otrajai automātiski
         var piešķirt Group_1.
