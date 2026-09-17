@@ -1,1676 +1,429 @@
 <!DOCTYPE html>
 <html lang="lv">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cenu lapa</title>
 
-    <title>Cenu lapa</title>
+  <style>
+    * { box-sizing: border-box; }
 
-    <!-- Microsoft login -->
-   <script
-    type="text/javascript"
-    src="https://alcdn.msftauth.net/browser/2.35.0/js/msal-browser.min.js">
-</script>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f3f4f6;
+      color: #1f2937;
+    }
 
-    <!-- Excel reader -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    .main {
+      max-width: 1500px;
+      margin: auto;
+      padding: 30px;
+    }
 
-    <style>
+    h1 { margin-bottom: 5px; }
 
-        * {
-            box-sizing: border-box;
-        }
+    .subtitle {
+      color: #6b7280;
+      margin-bottom: 25px;
+    }
 
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background: #f3f4f6;
-            color: #1f2937;
-        }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    }
 
-        .main {
-            max-width: 1500px;
-            margin: auto;
-            padding: 30px;
-        }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
 
-        h1 {
-            margin-bottom: 5px;
-        }
+    .tab {
+      padding: 10px 18px;
+      border: 1px solid #d1d5db;
+      background: white;
+      border-radius: 7px;
+      cursor: pointer;
+      font-weight: bold;
+    }
 
-        .subtitle {
-            color: #6b7280;
-            margin-bottom: 25px;
-        }
+    .tab.active {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
 
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.06);
-        }
+    #search {
+      width: 100%;
+      max-width: 400px;
+      padding: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 7px;
+      font-size: 15px;
+    }
 
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+    .table-wrapper { overflow-x: auto; }
 
-        button {
-            border: 0;
-            border-radius: 7px;
-            padding: 10px 18px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-        }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
 
-        .primary {
-            background: #2563eb;
-            color: white;
-        }
+    th {
+      background: #e5e7eb;
+      padding: 10px;
+      text-align: left;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+    }
 
-        .secondary {
-            background: #e5e7eb;
-            color: #1f2937;
-        }
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      white-space: nowrap;
+    }
 
-        .danger {
-            background: #fee2e2;
-            color: #991b1b;
-        }
+    td.number,
+    th.number {
+      text-align: right;
+    }
 
-        .status {
-            margin-top: 12px;
-            font-size: 14px;
-            color: #6b7280;
-        }
+    tbody tr:hover td {
+      background: #f9fafb;
+    }
 
-        .success {
-            color: #166534;
-        }
+    th.akcija-column {
+      background: #f6d365 !important;
+      font-weight: bold;
+    }
 
-        .error {
-            margin-top: 15px;
-            padding: 12px;
-            background: #fef2f2;
-            color: #991b1b;
-            border-radius: 7px;
-        }
+    td.akcija-column {
+      background: #fff3a3 !important;
+      font-weight: bold;
+    }
 
-        .hidden {
-            display: none;
-        }
+    tbody tr:hover td.akcija-column {
+      background: #ffe875 !important;
+    }
 
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
+    .count,
+    .status {
+      color: #6b7280;
+      font-size: 14px;
+    }
 
-        .tab {
-            background: white;
-            color: #1f2937;
-            border: 1px solid #d1d5db;
-        }
+    .count { margin-bottom: 12px; }
 
-        .tab.active {
-            background: #2563eb;
-            color: white;
-            border-color: #2563eb;
-        }
+    .error {
+      padding: 12px;
+      border-radius: 7px;
+      background: #fef2f2;
+      color: #991b1b;
+    }
 
-        #search {
-            width: 100%;
-            max-width: 400px;
-            padding: 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 7px;
-            font-size: 15px;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-        }
-
-        th {
-            background: #e5e7eb;
-            padding: 10px;
-            text-align: left;
-            white-space: nowrap;
-            position: sticky;
-            top: 0;
-        }
-
-        td {
-            padding: 9px 10px;
-            border-bottom: 1px solid #e5e7eb;
-            white-space: nowrap;
-        }
-
-        td.number,
-        th.number {
-            text-align: right;
-        }
-
-        tbody tr:hover td {
-            background: #f9fafb;
-        }
-
-        th.akcija-column {
-            background: #f6d365 !important;
-            font-weight: bold;
-        }
-
-        td.akcija-column {
-            background: #fff3a3 !important;
-            font-weight: bold;
-        }
-
-        tbody tr:hover td.akcija-column {
-            background: #ffe875 !important;
-        }
-
-        .discount {
-            font-weight: bold;
-        }
-
-        .count {
-            margin-bottom: 12px;
-            color: #6b7280;
-            font-size: 14px;
-        }
-
-        .user-info {
-            font-size: 14px;
-            color: #4b5563;
-        }
-
-    </style>
-
+    .hidden { display: none; }
+  </style>
 </head>
 
 <body>
-
 <div class="main">
 
-    <h1>Cenu lapa</h1>
+  <h1>Cenu lapa</h1>
+  <div class="subtitle">Aktuālās Helvetia kampaņas cenas</div>
 
-    <div class="subtitle">
-        Helvetia cenu lapa no SharePoint
+  <div id="loading" class="card status">
+    Ielādēju aktuālās cenas...
+  </div>
+
+  <div id="error" class="card error hidden"></div>
+
+  <div id="content" class="hidden">
+
+    <div class="tabs">
+      <button class="tab active" data-category="supplements">Uztura bagātinātāji</button>
+      <button class="tab" data-category="cosmetics">Kosmētika</button>
+      <button class="tab" data-category="pets">Mājdzīvnieki</button>
     </div>
-
-
-    <!-- LOGIN / STATUS -->
 
     <div class="card">
-
-        <div class="top-bar">
-
-            <div>
-
-                <strong>SharePoint datu avots</strong>
-
-                <div id="userInfo" class="user-info">
-                    Nav pieslēgts Microsoft konts
-                </div>
-
-            </div>
-
-
-            <div>
-
-                <button
-                    id="loginButton"
-                    class="primary">
-                    Pieslēgties ar Microsoft
-                </button>
-
-                <button
-                    id="refreshButton"
-                    class="secondary hidden">
-                    Atjaunot datus
-                </button>
-
-                <button
-                    id="logoutButton"
-                    class="danger hidden">
-                    Iziet
-                </button>
-
-            </div>
-
-        </div>
-
-
-        <div id="status" class="status"></div>
-
-        <div id="error"></div>
-
+      <input id="search" type="text" placeholder="Meklēt produktu vai artikulu...">
     </div>
 
+    <div class="card">
+      <div id="productCount" class="count"></div>
 
-    <!-- PRICING CONTENT -->
-
-    <div id="content" class="hidden">
-
-
-        <div class="tabs">
-
-            <button
-                class="tab active"
-                data-category="supplements">
-                Uztura bagātinātāji
-            </button>
-
-            <button
-                class="tab"
-                data-category="cosmetics">
-                Kosmētika
-            </button>
-
-            <button
-                class="tab"
-                data-category="pets">
-                Mājdzīvnieki
-            </button>
-
-        </div>
-
-
-        <div class="card">
-
-            <input
-                id="search"
-                type="text"
-                placeholder="Meklēt produktu vai artikulu..."
-            >
-
-        </div>
-
-
-        <div class="card">
-
-            <div id="productCount" class="count"></div>
-
-            <div class="table-wrapper">
-
-                <table>
-
-                    <thead>
-
-                    <tr>
-
-                        <th>Art.</th>
-
-                        <th>Produkts</th>
-
-                        <th>Daudzums</th>
-
-                        <th class="number">
-                            Cena
-                        </th>
-
-                        <th class="number akcija-column">
-                            Akcija
-                        </th>
-
-                        <th class="number">
-                            Atlaide
-                        </th>
-
-                        <th class="number">
-                            Atlaide %
-                        </th>
-
-                        <th class="number">
-                            Pietiek MIN
-                        </th>
-
-                        <th class="number">
-                            Pietiek MAX
-                        </th>
-
-                        <th>
-                            IDD MIN
-                        </th>
-
-                        <th>
-                            IDD MAX
-                        </th>
-
-                    </tr>
-
-                    </thead>
-
-                    <tbody id="productRows"></tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Art.</th>
+              <th>Produkts</th>
+              <th>Daudzums</th>
+              <th class="number">Cena</th>
+              <th class="number akcija-column">Akcija</th>
+              <th class="number">Atlaide</th>
+              <th class="number">Atlaide %</th>
+              <th class="number">Pietiek MIN</th>
+              <th class="number">Pietiek MAX</th>
+              <th>IDD MIN</th>
+              <th>IDD MAX</th>
+            </tr>
+          </thead>
+          <tbody id="productRows"></tbody>
+        </table>
+      </div>
     </div>
 
+  </div>
 </div>
 
-
 <script>
-
-/*
-==================================================
-MICROSOFT / SHAREPOINT SETTINGS
-==================================================
-*/
-
-const CLIENT_ID =
-    "585115a6-d098-447e-9b59-2b49b43a699d";
-
-const TENANT_ID =
-    "a0841646-28f3-44a9-a210-5be5771b6e9e";
-
-
-const SHAREPOINT_HOST =
-    "bpoliepaja529.sharepoint.com";
-
-
-const SITE_PATH =
-    "/sites/BPODokumenti";
-
-
-/*
-The Shared Documents / Koplietojamie dokumenti
-library is the site's default drive.
-
-Therefore the path starts AFTER
-"Koplietojamie dokumenti".
-*/
-
-const FILE_PATH =
-    "Projekti/Nauris/HELVETIAjauns/Helvetia_mans/Kampanas/2026/Rudens_2026/Materiāli/LV_2026-09.xlsx";
-
-
-/*
-==================================================
-MSAL CONFIGURATION
-==================================================
-*/
-
-const msalConfig = {
-
-    auth: {
-
-        clientId: CLIENT_ID,
-
-        authority:
-            "https://login.microsoftonline.com/" +
-            TENANT_ID,
-
-        /*
-        Uses the current GitHub Pages page.
-        */
-
-        redirectUri:
-            window.location.origin +
-            window.location.pathname
-
-    },
-
-    cache: {
-
-        cacheLocation:
-            "sessionStorage",
-
-        storeAuthStateInCookie:
-            false
-
-    }
-
-};
-
-
-const msalInstance =
-    new msal.PublicClientApplication(
-        msalConfig
-    );
-
-
-const loginRequest = {
-
-    scopes: [
-        "User.Read",
-        "Sites.Read.All"
-    ]
-
-};
-
-
-const tokenRequest = {
-
-    scopes: [
-        "User.Read",
-        "Sites.Read.All"
-    ]
-
-};
-
-
-/*
-==================================================
-GLOBAL DATA
-==================================================
-*/
-
 let allProducts = [];
+let currentCategory = "supplements";
 
-let currentCategory =
-    "supplements";
+loadPricing();
 
-let currentAccount = null;
-
-
-/*
-==================================================
-BUTTONS
-==================================================
-*/
-
-document
-    .getElementById("loginButton")
-    .addEventListener(
-        "click",
-        login
+async function loadPricing() {
+  try {
+    // no-store + timestamp helps avoid showing old prices after you replace pricing.json
+    const response = await fetch(
+      "pricing.json?v=" + Date.now(),
+      { cache: "no-store" }
     );
-
-
-document
-    .getElementById("refreshButton")
-    .addEventListener(
-        "click",
-        loadSharePointFile
-    );
-
-
-document
-    .getElementById("logoutButton")
-    .addEventListener(
-        "click",
-        logout
-    );
-
-
-/*
-==================================================
-START APP
-==================================================
-*/
-
-startApp();
-
-
-async function startApp() {
-
-    const accounts =
-        msalInstance.getAllAccounts();
-
-
-    if (
-        accounts.length > 0
-    ) {
-
-        currentAccount =
-            accounts[0];
-
-
-        showLoggedInState();
-
-
-        /*
-        Automatically load SharePoint
-        when page opens.
-        */
-
-        await loadSharePointFile();
-
-    }
-
-}
-
-
-/*
-==================================================
-LOGIN
-==================================================
-*/
-
-async function login() {
-
-    clearError();
-
-
-    try {
-
-        setStatus(
-            "Atver Microsoft pieslēgšanos..."
-        );
-
-
-        const loginResponse =
-            await msalInstance
-                .loginPopup(
-                    loginRequest
-                );
-
-
-        currentAccount =
-            loginResponse.account;
-
-
-        showLoggedInState();
-
-
-        await loadSharePointFile();
-
-    }
-
-    catch(error) {
-
-        console.error(error);
-
-        showError(
-            "Microsoft pieslēgšanās neizdevās: " +
-            error.message
-        );
-
-    }
-
-}
-
-
-/*
-==================================================
-LOGOUT
-==================================================
-*/
-
-async function logout() {
-
-    if (!currentAccount) {
-        return;
-    }
-
-
-    await msalInstance.logoutPopup({
-
-        account:
-            currentAccount
-
-    });
-
-
-    currentAccount = null;
-
-    allProducts = [];
-
-
-    document
-        .getElementById("content")
-        .classList
-        .add("hidden");
-
-
-    document
-        .getElementById("loginButton")
-        .classList
-        .remove("hidden");
-
-
-    document
-        .getElementById("refreshButton")
-        .classList
-        .add("hidden");
-
-
-    document
-        .getElementById("logoutButton")
-        .classList
-        .add("hidden");
-
-
-    document
-        .getElementById("userInfo")
-        .textContent =
-        "Nav pieslēgts Microsoft konts";
-
-
-    setStatus("");
-
-}
-
-
-/*
-==================================================
-LOGIN UI
-==================================================
-*/
-
-function showLoggedInState() {
-
-    document
-        .getElementById("loginButton")
-        .classList
-        .add("hidden");
-
-
-    document
-        .getElementById("refreshButton")
-        .classList
-        .remove("hidden");
-
-
-    document
-        .getElementById("logoutButton")
-        .classList
-        .remove("hidden");
-
-
-    document
-        .getElementById("userInfo")
-        .textContent =
-        currentAccount.name ||
-        currentAccount.username;
-
-}
-
-
-/*
-==================================================
-GET ACCESS TOKEN
-==================================================
-*/
-
-async function getAccessToken() {
-
-    if (!currentAccount) {
-
-        throw new Error(
-            "Nav Microsoft pieslēguma."
-        );
-
-    }
-
-
-    try {
-
-        const response =
-            await msalInstance
-                .acquireTokenSilent({
-
-                    ...tokenRequest,
-
-                    account:
-                        currentAccount
-
-                });
-
-
-        return response.accessToken;
-
-    }
-
-    catch(error) {
-
-        /*
-        If silent token fails,
-        Microsoft shows login popup again.
-        */
-
-        const response =
-            await msalInstance
-                .acquireTokenPopup({
-
-                    ...tokenRequest,
-
-                    account:
-                        currentAccount
-
-                });
-
-
-        return response.accessToken;
-
-    }
-
-}
-
-
-/*
-==================================================
-LOAD SHAREPOINT FILE
-==================================================
-*/
-
-async function loadSharePointFile() {
-
-    clearError();
-
-
-    try {
-
-        setStatus(
-            "Pieslēdzos SharePoint..."
-        );
-
-
-        const accessToken =
-            await getAccessToken();
-
-
-        /*
-        STEP 1:
-        Find SharePoint site ID.
-        */
-
-        const siteUrl =
-
-            "https://graph.microsoft.com/v1.0/sites/" +
-
-            SHAREPOINT_HOST +
-
-            ":" +
-
-            SITE_PATH;
-
-
-        const siteResponse =
-            await graphFetch(
-                siteUrl,
-                accessToken
-            );
-
-
-        const siteId =
-            siteResponse.id;
-
-
-        setStatus(
-            "SharePoint atrasts. Lejupielādēju cenu failu..."
-        );
-
-
-        /*
-        STEP 2:
-        Download Excel from default
-        SharePoint document library.
-        */
-
-        const encodedFilePath =
-            encodeGraphPath(
-                FILE_PATH
-            );
-
-
-        const fileUrl =
-
-            "https://graph.microsoft.com/v1.0/sites/" +
-
-            siteId +
-
-            "/drive/root:/" +
-
-            encodedFilePath +
-
-            ":/content";
-
-
-        const response =
-            await fetch(
-                fileUrl,
-                {
-                    headers: {
-                        Authorization:
-                            "Bearer " +
-                            accessToken
-                    }
-                }
-            );
-
-
-        if (!response.ok) {
-
-            const errorText =
-                await response.text();
-
-
-            throw new Error(
-
-                "Neizdevās lejupielādēt Excel. " +
-
-                response.status +
-
-                " " +
-
-                errorText
-
-            );
-
-        }
-
-
-        const arrayBuffer =
-            await response.arrayBuffer();
-
-
-        setStatus(
-            "Excel lejupielādēts. Apstrādāju List1..."
-        );
-
-
-        readWorkbook(
-            arrayBuffer
-        );
-
-
-        setStatus(
-            "Dati veiksmīgi atjaunoti no SharePoint.",
-            true
-        );
-
-    }
-
-    catch(error) {
-
-        console.error(error);
-
-
-        showError(
-            error.message
-        );
-
-    }
-
-}
-
-
-/*
-==================================================
-GRAPH FETCH
-==================================================
-*/
-
-async function graphFetch(
-    url,
-    accessToken
-) {
-
-    const response =
-        await fetch(
-            url,
-            {
-
-                headers: {
-
-                    Authorization:
-                        "Bearer " +
-                        accessToken
-
-                }
-
-            }
-        );
-
 
     if (!response.ok) {
-
-        const text =
-            await response.text();
-
-
-        throw new Error(
-
-            "Microsoft Graph kļūda: " +
-
-            response.status +
-
-            " " +
-
-            text
-
-        );
-
+      throw new Error(
+        "pricing.json nav atrasts. Pārliecinies, ka tas ir tajā pašā GitHub mapē kā index.html."
+      );
     }
 
+    allProducts = await response.json();
 
-    return await response.json();
-
-}
-
-
-/*
-==================================================
-GRAPH FILE PATH ENCODING
-==================================================
-*/
-
-function encodeGraphPath(path) {
-
-    return path
-        .split("/")
-        .map(part =>
-            encodeURIComponent(part)
-        )
-        .join("/");
-
-}
-
-
-/*
-==================================================
-READ EXCEL
-==================================================
-*/
-
-function readWorkbook(
-    arrayBuffer
-) {
-
-    const workbook =
-        XLSX.read(
-            arrayBuffer,
-            {
-                type: "array"
-            }
-        );
-
-
-    const sheet =
-        workbook
-            .Sheets["List1"];
-
-
-    if (!sheet) {
-
-        throw new Error(
-            'Excel failā nav atrasta lapa "List1".'
-        );
-
+    if (!Array.isArray(allProducts)) {
+      throw new Error("pricing.json formāts nav pareizs.");
     }
 
-
-    /*
-    Real headers are Excel row 2.
-    */
-
-    const rows =
-        XLSX.utils.sheet_to_json(
-            sheet,
-            {
-
-                range: 1,
-
-                defval: "",
-
-                raw: true
-
-            }
-        );
-
-
-    processData(rows);
-
-
-    document
-        .getElementById("content")
-        .classList
-        .remove("hidden");
-
+    document.getElementById("loading").classList.add("hidden");
+    document.getElementById("content").classList.remove("hidden");
 
     renderTable();
+  }
+  catch (error) {
+    document.getElementById("loading").classList.add("hidden");
 
+    const errorBox = document.getElementById("error");
+    errorBox.textContent = error.message;
+    errorBox.classList.remove("hidden");
+  }
 }
-
-
-/*
-==================================================
-PROCESS DATA
-==================================================
-*/
-
-function processData(rows) {
-
-    allProducts = [];
-
-
-    rows.forEach(row => {
-
-
-        /*
-        There are two Group columns.
-        SheetJS calls the second one Group_1.
-        */
-
-        const lvGroup =
-            String(
-                row["Group_1"] ||
-                ""
-            ).trim();
-
-
-        let category = null;
-
-
-        if (
-            lvGroup ===
-            "1 Uztura bagātinātāji"
-        ) {
-
-            category =
-                "supplements";
-
-        }
-
-
-        else if (
-            lvGroup ===
-            "2 Kosmētika"
-        ) {
-
-            category =
-                "cosmetics";
-
-        }
-
-
-        else if (
-
-            lvGroup ===
-            "5 Mājdzīvnieks"
-
-            ||
-
-            lvGroup ===
-            "6 Mājdzīvnieks - cits"
-
-        ) {
-
-            category =
-                "pets";
-
-        }
-
-
-        else {
-
-            return;
-
-        }
-
-
-        const art =
-            row["Art. No."];
-
-
-        const product =
-            row[
-                "Product Name Aesculap (ve skupinách řadit abecedně dle názvu)"
-            ];
-
-
-        if (
-            art === "" ||
-            product === ""
-        ) {
-
-            return;
-
-        }
-
-
-        const regularPrice =
-            parseNumber(
-                row[
-                    "Regular price (EUR)"
-                ]
-            );
-
-
-        const salePrice =
-            parseNumber(
-                row[
-                    "Price (EUR)"
-                ]
-            );
-
-
-        const discount =
-            regularPrice -
-            salePrice;
-
-
-        const discountPercent =
-
-            regularPrice > 0
-
-                ? discount /
-                  regularPrice
-
-                : 0;
-
-
-        allProducts.push({
-
-            category,
-
-            art,
-
-            product,
-
-            content:
-                row["Content"],
-
-            regularPrice,
-
-            salePrice,
-
-            discount,
-
-            discountPercent,
-
-            periodMin:
-                row[
-                    "For period (months) - min"
-                ],
-
-            periodMax:
-                row[
-                    "For period (months) - max"
-                ],
-
-            iddMin:
-                row["RDD min"],
-
-            iddMax:
-                row["RDD max"]
-
-        });
-
-    });
-
-
-    allProducts.sort(
-
-        (a, b) =>
-
-            String(a.product)
-                .localeCompare(
-                    String(b.product),
-                    "lv"
-                )
-
-    );
-
-}
-
-
-/*
-==================================================
-RENDER TABLE
-==================================================
-*/
 
 function renderTable() {
+  const tbody = document.getElementById("productRows");
 
-    const tbody =
-        document
-            .getElementById(
-                "productRows"
-            );
-
-
-    const search =
-        document
-            .getElementById(
-                "search"
-            )
-            .value
-            .toLowerCase()
-            .trim();
-
-
-    tbody.innerHTML = "";
-
-
-    const products =
-        allProducts.filter(
-            product => {
-
-
-                if (
-                    product.category !==
-                    currentCategory
-                ) {
-
-                    return false;
-
-                }
-
-
-                if (!search) {
-
-                    return true;
-
-                }
-
-
-                return (
-
-                    String(product.art)
-                        .toLowerCase()
-                        .includes(search)
-
-                    ||
-
-                    String(product.product)
-                        .toLowerCase()
-                        .includes(search)
-
-                );
-
-            }
-        );
-
-
+  const search =
     document
-        .getElementById(
-            "productCount"
-        )
-        .textContent =
-        "Produkti: " +
-        products.length;
+      .getElementById("search")
+      .value
+      .toLowerCase()
+      .trim();
 
+  tbody.innerHTML = "";
 
-    products.forEach(
-        product => {
+  const products = allProducts.filter(product => {
 
-
-            const row =
-                document
-                    .createElement(
-                        "tr"
-                    );
-
-
-            row.innerHTML = `
-
-                <td>
-                    ${escapeHtml(product.art)}
-                </td>
-
-                <td>
-                    <b>
-                        ${escapeHtml(product.product)}
-                    </b>
-                </td>
-
-                <td>
-                    ${escapeHtml(product.content)}
-                </td>
-
-                <td class="number">
-                    ${money(product.regularPrice)}
-                </td>
-
-                <td class="number akcija-column">
-                    ${money(product.salePrice)}
-                </td>
-
-                <td class="number">
-                    ${money(product.discount)}
-                </td>
-
-                <td class="number discount">
-                    ${percent(product.discountPercent)}
-                </td>
-
-                <td class="number">
-                    ${oneDecimal(product.periodMin)}
-                </td>
-
-                <td class="number">
-                    ${oneDecimal(product.periodMax)}
-                </td>
-
-                <td>
-                    ${display(product.iddMin)}
-                </td>
-
-                <td>
-                    ${display(product.iddMax)}
-                </td>
-
-            `;
-
-
-            tbody
-                .appendChild(row);
-
-        }
-    );
-
-}
-
-
-/*
-==================================================
-TABS
-==================================================
-*/
-
-document
-    .querySelectorAll(".tab")
-    .forEach(
-        button => {
-
-
-            button
-                .addEventListener(
-                    "click",
-                    function() {
-
-
-                        document
-                            .querySelectorAll(
-                                ".tab"
-                            )
-                            .forEach(
-                                tab =>
-                                    tab
-                                        .classList
-                                        .remove(
-                                            "active"
-                                        )
-                            );
-
-
-                        this
-                            .classList
-                            .add(
-                                "active"
-                            );
-
-
-                        currentCategory =
-                            this.dataset.category;
-
-
-                        renderTable();
-
-                    }
-                );
-
-        }
-    );
-
-
-/*
-==================================================
-SEARCH
-==================================================
-*/
-
-document
-    .getElementById("search")
-    .addEventListener(
-        "input",
-        renderTable
-    );
-
-
-/*
-==================================================
-HELPERS
-==================================================
-*/
-
-function parseNumber(value) {
-
-    if (
-        value === "" ||
-        value === null ||
-        value === undefined
-    ) {
-
-        return 0;
-
+    if (product.category !== currentCategory) {
+      return false;
     }
 
-
-    if (
-        typeof value === "number"
-    ) {
-
-        return value;
-
+    if (!search) {
+      return true;
     }
-
-
-    const number =
-        Number(
-            String(value)
-                .replace(/\s/g, "")
-                .replace("€", "")
-                .replace(",", ".")
-                .trim()
-        );
-
-
-    return isNaN(number)
-        ? 0
-        : number;
-
-}
-
-
-function money(value) {
-
-    return Number(value)
-        .toLocaleString(
-            "lv-LV",
-            {
-
-                style:
-                    "currency",
-
-                currency:
-                    "EUR",
-
-                minimumFractionDigits:
-                    2,
-
-                maximumFractionDigits:
-                    2
-
-            }
-        );
-
-}
-
-
-function percent(value) {
 
     return (
-        Number(value) * 100
-    ).toLocaleString(
-        "lv-LV",
-        {
-            maximumFractionDigits: 0
-        }
-    ) + "%";
+      String(product.art ?? "")
+        .toLowerCase()
+        .includes(search)
+      ||
+      String(product.product ?? "")
+        .toLowerCase()
+        .includes(search)
+    );
+  });
 
+  document.getElementById("productCount").textContent =
+    "Produkti: " + products.length;
+
+  products.forEach(product => {
+
+    const regularPrice = number(product.regularPrice);
+    const salePrice = number(product.salePrice);
+
+    const discount = regularPrice - salePrice;
+
+    const discountPercent =
+      regularPrice > 0
+        ? discount / regularPrice
+        : 0;
+
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${escapeHtml(product.art)}</td>
+
+      <td>
+        <b>${escapeHtml(product.product)}</b>
+      </td>
+
+      <td>${escapeHtml(product.content)}</td>
+
+      <td class="number">
+        ${money(regularPrice)}
+      </td>
+
+      <td class="number akcija-column">
+        ${money(salePrice)}
+      </td>
+
+      <td class="number">
+        ${money(discount)}
+      </td>
+
+      <td class="number">
+        ${percent(discountPercent)}
+      </td>
+
+      <td class="number">
+        ${oneDecimal(product.periodMin)}
+      </td>
+
+      <td class="number">
+        ${oneDecimal(product.periodMax)}
+      </td>
+
+      <td>
+        ${display(product.iddMin)}
+      </td>
+
+      <td>
+        ${display(product.iddMax)}
+      </td>
+    `;
+
+    tbody.appendChild(row);
+  });
 }
 
+document.querySelectorAll(".tab").forEach(button => {
+  button.addEventListener("click", function() {
+
+    document
+      .querySelectorAll(".tab")
+      .forEach(tab => tab.classList.remove("active"));
+
+    this.classList.add("active");
+
+    currentCategory = this.dataset.category;
+
+    renderTable();
+  });
+});
+
+document
+  .getElementById("search")
+  .addEventListener("input", renderTable);
+
+function number(value) {
+  if (
+    value === "" ||
+    value === null ||
+    value === undefined
+  ) {
+    return 0;
+  }
+
+  if (typeof value === "number") {
+    return value;
+  }
+
+  const parsed = Number(
+    String(value)
+      .replace(/\s/g, "")
+      .replace("€", "")
+      .replace(",", ".")
+      .trim()
+  );
+
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function money(value) {
+  return Number(value).toLocaleString(
+    "lv-LV",
+    {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }
+  );
+}
+
+function percent(value) {
+  return (Number(value) * 100).toLocaleString(
+    "lv-LV",
+    {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }
+  ) + "%";
+}
 
 function oneDecimal(value) {
+  if (
+    value === "" ||
+    value === null ||
+    value === undefined
+  ) {
+    return "—";
+  }
 
-    if (
-        value === "" ||
-        value === null ||
-        value === undefined
-    ) {
-
-        return "—";
-
+  return number(value).toLocaleString(
+    "lv-LV",
+    {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1
     }
-
-
-    return parseNumber(value)
-        .toLocaleString(
-            "lv-LV",
-            {
-
-                minimumFractionDigits:
-                    1,
-
-                maximumFractionDigits:
-                    1
-
-            }
-        );
-
+  );
 }
-
 
 function display(value) {
+  if (
+    value === "" ||
+    value === null ||
+    value === undefined
+  ) {
+    return "—";
+  }
 
-    if (
-        value === "" ||
-        value === null ||
-        value === undefined
-    ) {
-
-        return "—";
-
-    }
-
-
-    return escapeHtml(value);
-
+  return escapeHtml(value);
 }
-
 
 function escapeHtml(value) {
-
-    return String(value)
-        .replaceAll(
-            "&",
-            "&amp;"
-        )
-        .replaceAll(
-            "<",
-            "&lt;"
-        )
-        .replaceAll(
-            ">",
-            "&gt;"
-        )
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-        .replaceAll(
-            "'",
-            "&#039;"
-        );
-
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
-
-
-/*
-==================================================
-STATUS / ERRORS
-==================================================
-*/
-
-function setStatus(
-    text,
-    success = false
-) {
-
-    const status =
-        document
-            .getElementById(
-                "status"
-            );
-
-
-    status.textContent =
-        text;
-
-
-    if (success) {
-
-        status
-            .classList
-            .add(
-                "success"
-            );
-
-    }
-
-    else {
-
-        status
-            .classList
-            .remove(
-                "success"
-            );
-
-    }
-
-}
-
-
-function showError(message) {
-
-    document
-        .getElementById(
-            "error"
-        )
-        .innerHTML =
-        '<div class="error">' +
-        escapeHtml(message) +
-        '</div>';
-
-
-    setStatus("");
-
-}
-
-
-function clearError() {
-
-    document
-        .getElementById(
-            "error"
-        )
-        .innerHTML = "";
-
-}
-
 </script>
 
 </body>
-
 </html>
