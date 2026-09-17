@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="lv">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Cenu lapa</title>
+
+    <!-- Excel failu lasīšanai -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .main {
+            max-width: 1500px;
+            margin: auto;
+            padding: 30px;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+        }
+
+        input[type="file"] {
+            padding: 10px;
+        }
+
+        #search {
+            width: 100%;
+            max-width: 400px;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #d1d5db;
+            border-radius: 7px;
+            font-size: 15px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 10px 18px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 7px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .tab.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: #e5e7eb;
+            padding: 9px;
+            text-align: left;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+        }
+
+        td {
+            padding: 8px 9px;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        td.number,
+        th.number {
+            text-align: right;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .discount {
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .info {
+            margin-top: 10px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .error {
+            margin-top: 15px;
+            padding: 12px;
+            background: #fef2f2;
+            color: #991b1b;
+            border-radius: 7px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="main">
+
+    <h1>Cenu lapa</h1>
+
+    <div class="subtitle">
+        Automātiska cenu lapas izveide no Raw_data
+    </div>
+
+
+    <!-- FAILA IELĀDE -->
+
+    <div class="card">
+
+        <strong>Izvēlies Excel failu</strong>
+
+        <br><br>
+
+        <input
+            type="file"
+            id="excelFile"
+            accept=".xlsx,.xls"
+        >
+
+        <div
+            id="fileInfo"
+            class="info">
+        </div>
+
+        <div id="error"></div>
+
+    </div>
+
+
+    <!-- DASHBOARD -->
+
+    <div
+        id="content"
+        class="hidden">
+
+
+        <!-- TABS -->
+
+        <div class="tabs">
+
+            <button
+                class="tab active"
+                data-category="supplements">
+
+                Uztura bagātinātāji
+
+            </button>
+
+            <button
+                class="tab"
+                data-category="cosmetics">
+
+                Kosmētika
+
+            </button>
+
+            <button
+                class="tab"
+                data-category="pets">
+
+                Mājdzīvnieki
+
+            </button>
+
+        </div>
+
+
+        <!-- SEARCH -->
+
+        <div class="card">
+
+            <input
+                id="search"
+                type="text"
+                placeholder="Meklēt produktu vai artikulu..."
+            >
+
+        </div>
+
+
+        <!-- TABLE -->
+
+        <div class="card">
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                    <tr>
+
+                        <th>Art.</th>
+
+                        <th>Produkts</th>
+
+                        <th>Daudzums</th>
+
+                        <th class="number">
+                            Cena
+                        </th>
+
+                        <th class="number">
+                            Akcija
+                        </th>
+
+                        <th class="number">
+                            Atlaide
+                        </th>
+
+                        <th class="number">
+                            Atlaide %
+                        </th>
+
+                        <th class="number">
+                            Pietiek MIN
+                        </th>
+
+                        <th class="number">
+                            Pietiek MAX
+                        </th>
+
+                        <th>
+                            IDD MIN
+                        </th>
+
+                        <th>
+                            IDD MAX
+                        </th>
+
+                    </tr>
+
+                    </thead>
+
+
+                    <tbody id="productRows">
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/*
+====================================
+DATI
+====================================
+*/
+
+let allProducts = [];
+
+let currentCategory =
+    "supplements";
+
+
+
+/*
+====================================
+EXCEL FILE
+====================================
+*/
+
+document
+    .getElementById("excelFile")
+    .addEventListener(
+        "change",
+        readExcel
+    );
+
+
+
+async function readExcel(event) {
+
+    const file =
+        event.target.files[0];
+
+
+    if (!file) {
+        return;
+    }
+
+
+    try {
+
+        const arrayBuffer =
+            await file.arrayBuffer();
+
+
+        const workbook =
+            XLSX.read(
+                arrayBuffer,
+                {
+                    type: "array"
+                }
+            );
+
+
+        /*
+        Meklējam Raw_data sheet
+        */
+
+        const sheet =
+            workbook.Sheets[
+                "Raw_data"
+            ];
+
+
+        if (!sheet) {
+
+            throw new Error(
+                'Excel failā nav atrasta lapa "Raw_data".'
+            );
+
+        }
+
+
+        /*
+        Raw_data headers atrodas 2. rindā.
+
+        range: 1 nozīmē -
+        sākam lasīt no Excel 2. rindas.
+        */
+
+        const rows =
+            XLSX.utils.sheet_to_json(
+                sheet,
+                {
+                    range: 1,
+                    defval: ""
+                }
+            );
+
+
+        processRawData(rows);
+
+
+        document
+            .getElementById("fileInfo")
+            .textContent =
+
+            file.name +
+            " — nolasītas " +
+            rows.length +
+            " rindas";
+
+
+        document
+            .getElementById("error")
+            .innerHTML = "";
+
+
+        document
+            .getElementById("content")
+            .classList
+            .remove("hidden");
+
+
+        renderTable();
+
+    }
+
+    catch(error) {
+
+        document
+            .getElementById("content")
+            .classList
+            .add("hidden");
+
+
+        document
+            .getElementById("error")
+            .innerHTML =
+
+            '<div class="error">' +
+            error.message +
+            '</div>';
+
+    }
+
+}
+
+
+
+/*
+====================================
+RAW DATA -> CLEAN DATA
+====================================
+*/
+
+function processRawData(rows) {
+
+
+    allProducts = [];
+
+
+    rows.forEach(row => {
+
+
+        /*
+        LV Group kolonna
+        */
+
+        const group =
+            String(
+                row["Group"] || ""
+            ).trim();
+
+
+        /*
+        Šeit svarīgs moments:
+
+        Raw_data ir 2 Group kolonnas.
+
+        SheetJS otrajai automātiski
+        var piešķirt Group_1.
+
+        Tāpēc pārbaudām abas.
+        */
+
+        const lvGroup =
+            String(
+                row["Group_1"] ||
+                group
+            ).trim();
+
+
+
+        let category = null;
+
+
+
+        /*
+        PRODUKTU GRUPAS
+        */
+
+        if (
+            lvGroup ===
+            "1 Uztura bagātinātāji"
+        ) {
+
+            category =
+                "supplements";
+
+        }
+
+
+        else if (
+            lvGroup ===
+            "2 Kosmētika"
+        ) {
+
+            category =
+                "cosmetics";
+
+        }
+
+
+        else if (
+            lvGroup ===
+            "5 Mājdzīvnieks" ||
+
+            lvGroup ===
+            "6 Mājdzīvnieks - cits"
+        ) {
+
+            category =
+                "pets";
+
+        }
+
+
+        else {
+
+            return;
+
+        }
+
+
+
+        /*
+        PAMATA LAUKI
+        */
+
+        const art =
+            getValue(
+                row,
+                [
+                    "Art. No.",
+                    "Art. No._1"
+                ]
+            );
+
+
+        const product =
+            getValue(
+                row,
+                [
+                    "Product Name Aesculap (ve skupinách řadit abecedně dle názvu)"
+                ]
+            );
+
+
+        /*
+        Ja nav artikula vai produkta,
+        rindu neizmantojam
+        */
+
+        if (
+            !art ||
+            !product
+        ) {
+
+            return;
+
+        }
+
+
+
+        const regularPrice =
+            parseNumber(
+
+                getValue(
+                    row,
+                    [
+                        "Regular price (EUR)"
+                    ]
+                )
+
+            );
+
+
+        const salePrice =
+            parseNumber(
+
+                getValue(
+                    row,
+                    [
+                        "Price (EUR)"
+                    ]
+                )
+
+            );
+
+
+        /*
+        Atlaidi rēķinām paši.
+
+        Tādā veidā mums nav jāpaļaujas
+        uz Excel formulu rezultātiem.
+        */
+
+        const discount =
+            regularPrice -
+            salePrice;
+
+
+        const discountPercent =
+
+            regularPrice > 0
+
+                ? discount /
+                  regularPrice
+
+                : 0;
+
+
+
+        allProducts.push({
+
+            category,
+
+            art,
+
+            product,
+
+            content:
+                getValue(
+                    row,
+                    [
+                        "Content"
+                    ]
+                ),
+
+            regularPrice,
+
+            salePrice,
+
+            discount,
+
+            discountPercent,
+
+            periodMin:
+                getValue(
+                    row,
+                    [
+                        "For period (months) - min"
+                    ]
+                ),
+
+            periodMax:
+                getValue(
+                    row,
+                    [
+                        "For period (months) - max"
+                    ]
+                ),
+
+            iddMin:
+                getValue(
+                    row,
+                    [
+                        "RDD min"
+                    ]
+                ),
+
+            iddMax:
+                getValue(
+                    row,
+                    [
+                        "RDD max"
+                    ]
+                )
+
+        });
+
+    });
+
+
+
+    /*
+    Alfabētiski pēc produkta nosaukuma
+    */
+
+    allProducts.sort(
+        (a, b) =>
+
+            a.product.localeCompare(
+                b.product,
+                "lv"
+            )
+    );
+
+}
+
+
+
+/*
+====================================
+TABLE
+====================================
+*/
+
+function renderTable() {
+
+
+    const tbody =
+        document
+            .getElementById(
+                "productRows"
+            );
+
+
+    const search =
+        document
+            .getElementById(
+                "search"
+            )
+            .value
+            .toLowerCase()
+            .trim();
+
+
+    tbody.innerHTML = "";
+
+
+    const products =
+        allProducts.filter(product => {
+
+
+            if (
+                product.category !==
+                currentCategory
+            ) {
+
+                return false;
+
+            }
+
+
+            if (!search) {
+
+                return true;
+
+            }
+
+
+            return (
+
+                String(product.art)
+                    .toLowerCase()
+                    .includes(search)
+
+                ||
+
+                product.product
+                    .toLowerCase()
+                    .includes(search)
+
+            );
+
+        });
+
+
+
+    products.forEach(product => {
+
+
+        const row =
+            document.createElement(
+                "tr"
+            );
+
+
+        row.innerHTML = `
+
+            <td>
+                ${product.art}
+            </td>
+
+
+            <td>
+                <b>${product.product}</b>
+            </td>
+
+
+            <td>
+                ${product.content}
+            </td>
+
+
+            <td class="number">
+                ${money(product.regularPrice)}
+            </td>
+
+
+            <td class="number">
+                ${money(product.salePrice)}
+            </td>
+
+
+            <td class="number">
+                ${money(product.discount)}
+            </td>
+
+
+            <td class="number discount">
+                ${percent(product.discountPercent)}
+            </td>
+
+
+            <td class="number">
+                ${display(product.periodMin)}
+            </td>
+
+
+            <td class="number">
+                ${display(product.periodMax)}
+            </td>
+
+
+            <td>
+                ${display(product.iddMin)}
+            </td>
+
+
+            <td>
+                ${display(product.iddMax)}
+            </td>
+
+        `;
+
+
+        tbody.appendChild(row);
+
+    });
+
+}
+
+
+
+/*
+====================================
+TABS
+====================================
+*/
+
+document
+    .querySelectorAll(".tab")
+    .forEach(button => {
+
+
+        button.addEventListener(
+            "click",
+            function() {
+
+
+                document
+                    .querySelectorAll(
+                        ".tab"
+                    )
+                    .forEach(tab =>
+
+                        tab.classList
+                            .remove(
+                                "active"
+                            )
+
+                    );
+
+
+                this.classList
+                    .add(
+                        "active"
+                    );
+
+
+                currentCategory =
+                    this.dataset.category;
+
+
+                renderTable();
+
+            }
+        );
+
+    });
+
+
+
+/*
+====================================
+SEARCH
+====================================
+*/
+
+document
+    .getElementById("search")
+    .addEventListener(
+        "input",
+        renderTable
+    );
+
+
+
+/*
+====================================
+HELPERS
+====================================
+*/
+
+function getValue(
+    row,
+    possibleNames
+) {
+
+    for (
+        const name
+        of possibleNames
+    ) {
+
+        if (
+            row[name] !== undefined &&
+            row[name] !== ""
+        ) {
+
+            return row[name];
+
+        }
+
+    }
+
+
+    return "";
+
+}
+
+
+
+function parseNumber(value) {
+
+    if (
+        value === "" ||
+        value === null ||
+        value === undefined
+    ) {
+
+        return 0;
+
+    }
+
+
+    const number =
+        Number(
+            String(value)
+                .replace(
+                    ",",
+                    "."
+                )
+        );
+
+
+    return isNaN(number)
+        ? 0
+        : number;
+
+}
+
+
+
+function money(value) {
+
+    return Number(value)
+        .toLocaleString(
+            "lv-LV",
+            {
+                style: "currency",
+                currency: "EUR"
+            }
+        );
+
+}
+
+
+
+function percent(value) {
+
+    return (
+        value * 100
+    ).toFixed(0) + "%";
+
+}
+
+
+
+function display(value) {
+
+    if (
+        value === undefined ||
+        value === null ||
+        value === ""
+    ) {
+
+        return "—";
+
+    }
+
+
+    return value;
+
+}
+
+</script>
+
+</body>
+
+</html>
