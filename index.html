@@ -7,7 +7,6 @@
 
     <title>Cenu lapa</title>
 
-    <!-- Excel failu lasīšanai -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
     <style>
@@ -116,6 +115,15 @@
             font-weight: bold;
         }
 
+        .akcija-column {
+            background: #fff3cd;
+            font-weight: bold;
+        }
+
+        th.akcija-column {
+            background: #f6d365;
+        }
+
         .hidden {
             display: none;
         }
@@ -149,8 +157,6 @@
     </div>
 
 
-    <!-- FAILA IELĀDE -->
-
     <div class="card">
 
         <strong>Izvēlies Excel failu</strong>
@@ -173,45 +179,33 @@
     </div>
 
 
-    <!-- DASHBOARD -->
-
     <div
         id="content"
         class="hidden">
 
-
-        <!-- TABS -->
 
         <div class="tabs">
 
             <button
                 class="tab active"
                 data-category="supplements">
-
                 Uztura bagātinātāji
-
             </button>
 
             <button
                 class="tab"
                 data-category="cosmetics">
-
                 Kosmētika
-
             </button>
 
             <button
                 class="tab"
                 data-category="pets">
-
                 Mājdzīvnieki
-
             </button>
 
         </div>
 
-
-        <!-- SEARCH -->
 
         <div class="card">
 
@@ -223,8 +217,6 @@
 
         </div>
 
-
-        <!-- TABLE -->
 
         <div class="card">
 
@@ -246,7 +238,7 @@
                             Cena
                         </th>
 
-                        <th class="number">
+                        <th class="number akcija-column">
                             Akcija
                         </th>
 
@@ -295,24 +287,10 @@
 
 <script>
 
-/*
-====================================
-DATI
-====================================
-*/
-
 let allProducts = [];
 
-let currentCategory =
-    "supplements";
+let currentCategory = "supplements";
 
-
-
-/*
-====================================
-EXCEL FILE
-====================================
-*/
 
 document
     .getElementById("excelFile")
@@ -322,12 +300,9 @@ document
     );
 
 
-
 async function readExcel(event) {
 
-    const file =
-        event.target.files[0];
-
+    const file = event.target.files[0];
 
     if (!file) {
         return;
@@ -349,10 +324,6 @@ async function readExcel(event) {
             );
 
 
-        /*
-        Meklējam List1 sheet
-        */
-
         const sheet =
             workbook.Sheets[
                 "List1"
@@ -368,18 +339,10 @@ async function readExcel(event) {
         }
 
 
-        /*
-        List1 headers atrodas 2. rindā.
-
-        range: 1 nozīmē -
-        sākam lasīt no Excel 2. rindas.
-        */
-
         const rows =
             XLSX.utils.sheet_to_json(
                 sheet,
                 {
-                    range: 1,
                     defval: ""
                 }
             );
@@ -391,7 +354,6 @@ async function readExcel(event) {
         document
             .getElementById("fileInfo")
             .textContent =
-
             file.name +
             " — nolasītas " +
             rows.length +
@@ -424,7 +386,6 @@ async function readExcel(event) {
         document
             .getElementById("error")
             .innerHTML =
-
             '<div class="error">' +
             error.message +
             '</div>';
@@ -434,15 +395,7 @@ async function readExcel(event) {
 }
 
 
-
-/*
-====================================
-RAW DATA -> CLEAN DATA
-====================================
-*/
-
 function processRawData(rows) {
-
 
     allProducts = [];
 
@@ -450,26 +403,11 @@ function processRawData(rows) {
     rows.forEach(row => {
 
 
-        /*
-        LV Group kolonna
-        */
-
         const group =
             String(
                 row["Group"] || ""
             ).trim();
 
-
-        /*
-        Šeit svarīgs moments:
-
-        List1 ir 2 Group kolonnas.
-
-        SheetJS otrajai automātiski
-        var piešķirt Group_1.
-
-        Tāpēc pārbaudām abas.
-        */
 
         const lvGroup =
             String(
@@ -478,36 +416,26 @@ function processRawData(rows) {
             ).trim();
 
 
-
         let category = null;
 
-
-
-        /*
-        PRODUKTU GRUPAS
-        */
 
         if (
             lvGroup ===
             "1 Uztura bagātinātāji"
         ) {
 
-            category =
-                "supplements";
+            category = "supplements";
 
         }
-
 
         else if (
             lvGroup ===
             "2 Kosmētika"
         ) {
 
-            category =
-                "cosmetics";
+            category = "cosmetics";
 
         }
-
 
         else if (
             lvGroup ===
@@ -517,11 +445,9 @@ function processRawData(rows) {
             "6 Mājdzīvnieks - cits"
         ) {
 
-            category =
-                "pets";
+            category = "pets";
 
         }
-
 
         else {
 
@@ -530,17 +456,14 @@ function processRawData(rows) {
         }
 
 
-
-        /*
-        PAMATA LAUKI
-        */
-
         const art =
             getValue(
                 row,
                 [
                     "Art. No.",
-                    "Art. No._1"
+                    "Art. No._1",
+                    "Art.",
+                    "Artikel"
                 ]
             );
 
@@ -549,15 +472,13 @@ function processRawData(rows) {
             getValue(
                 row,
                 [
-                    "Product Name Aesculap (ve skupinách řadit abecedně dle názvu)"
+                    "Product Name Aesculap (ve skupinách řadit abecedně dle názvu)",
+                    "Product Name Aesculap",
+                    "Produkts",
+                    "Product"
                 ]
             );
 
-
-        /*
-        Ja nav artikula vai produkta,
-        rindu neizmantojam
-        */
 
         if (
             !art ||
@@ -569,39 +490,29 @@ function processRawData(rows) {
         }
 
 
-
         const regularPrice =
             parseNumber(
-
                 getValue(
                     row,
                     [
-                        "Regular price (EUR)"
+                        "Regular price (EUR)",
+                        "Cena"
                     ]
                 )
-
             );
 
 
         const salePrice =
             parseNumber(
-
                 getValue(
                     row,
                     [
-                        "Price (EUR)"
+                        "Price (EUR)",
+                        "Akcija"
                     ]
                 )
-
             );
 
-
-        /*
-        Atlaidi rēķinām paši.
-
-        Tādā veidā mums nav jāpaļaujas
-        uz Excel formulu rezultātiem.
-        */
 
         const discount =
             regularPrice -
@@ -609,14 +520,9 @@ function processRawData(rows) {
 
 
         const discountPercent =
-
             regularPrice > 0
-
-                ? discount /
-                  regularPrice
-
+                ? discount / regularPrice
                 : 0;
-
 
 
         allProducts.push({
@@ -631,7 +537,8 @@ function processRawData(rows) {
                 getValue(
                     row,
                     [
-                        "Content"
+                        "Content",
+                        "Daudzums"
                     ]
                 ),
 
@@ -647,7 +554,8 @@ function processRawData(rows) {
                 getValue(
                     row,
                     [
-                        "For period (months) - min"
+                        "For period (months) - min",
+                        "Pietiek MIN"
                     ]
                 ),
 
@@ -655,7 +563,8 @@ function processRawData(rows) {
                 getValue(
                     row,
                     [
-                        "For period (months) - max"
+                        "For period (months) - max",
+                        "Pietiek MAX"
                     ]
                 ),
 
@@ -663,7 +572,8 @@ function processRawData(rows) {
                 getValue(
                     row,
                     [
-                        "RDD min"
+                        "RDD min",
+                        "IDD MIN"
                     ]
                 ),
 
@@ -671,7 +581,8 @@ function processRawData(rows) {
                 getValue(
                     row,
                     [
-                        "RDD max"
+                        "RDD max",
+                        "IDD MAX"
                     ]
                 )
 
@@ -680,14 +591,8 @@ function processRawData(rows) {
     });
 
 
-
-    /*
-    Alfabētiski pēc produkta nosaukuma
-    */
-
     allProducts.sort(
         (a, b) =>
-
             a.product.localeCompare(
                 b.product,
                 "lv"
@@ -697,21 +602,12 @@ function processRawData(rows) {
 }
 
 
-
-/*
-====================================
-TABLE
-====================================
-*/
-
 function renderTable() {
 
-
     const tbody =
-        document
-            .getElementById(
-                "productRows"
-            );
+        document.getElementById(
+            "productRows"
+        );
 
 
     const search =
@@ -765,7 +661,6 @@ function renderTable() {
         });
 
 
-
     products.forEach(product => {
 
 
@@ -797,7 +692,7 @@ function renderTable() {
             </td>
 
 
-            <td class="number">
+            <td class="number akcija-column">
                 ${money(product.salePrice)}
             </td>
 
@@ -813,12 +708,12 @@ function renderTable() {
 
 
             <td class="number">
-                ${display(product.periodMin)}
+                ${oneDecimal(product.periodMin)}
             </td>
 
 
             <td class="number">
-                ${display(product.periodMax)}
+                ${oneDecimal(product.periodMax)}
             </td>
 
 
@@ -841,13 +736,6 @@ function renderTable() {
 }
 
 
-
-/*
-====================================
-TABS
-====================================
-*/
-
 document
     .querySelectorAll(".tab")
     .forEach(button => {
@@ -859,23 +747,17 @@ document
 
 
                 document
-                    .querySelectorAll(
-                        ".tab"
-                    )
+                    .querySelectorAll(".tab")
                     .forEach(tab =>
-
-                        tab.classList
-                            .remove(
-                                "active"
-                            )
-
+                        tab.classList.remove(
+                            "active"
+                        )
                     );
 
 
-                this.classList
-                    .add(
-                        "active"
-                    );
+                this.classList.add(
+                    "active"
+                );
 
 
                 currentCategory =
@@ -890,13 +772,6 @@ document
     });
 
 
-
-/*
-====================================
-SEARCH
-====================================
-*/
-
 document
     .getElementById("search")
     .addEventListener(
@@ -904,13 +779,6 @@ document
         renderTable
     );
 
-
-
-/*
-====================================
-HELPERS
-====================================
-*/
 
 function getValue(
     row,
@@ -933,11 +801,9 @@ function getValue(
 
     }
 
-
     return "";
 
 }
-
 
 
 function parseNumber(value) {
@@ -956,10 +822,9 @@ function parseNumber(value) {
     const number =
         Number(
             String(value)
-                .replace(
-                    ",",
-                    "."
-                )
+                .replace(",", ".")
+                .replace("€", "")
+                .trim()
         );
 
 
@@ -970,7 +835,6 @@ function parseNumber(value) {
 }
 
 
-
 function money(value) {
 
     return Number(value)
@@ -978,22 +842,56 @@ function money(value) {
             "lv-LV",
             {
                 style: "currency",
-                currency: "EUR"
+                currency: "EUR",
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
             }
         );
 
 }
 
 
-
 function percent(value) {
 
     return (
         value * 100
-    ).toFixed(0) + "%";
+    ).toLocaleString(
+        "lv-LV",
+        {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }
+    ) + "%";
 
 }
 
+
+function oneDecimal(value) {
+
+    if (
+        value === undefined ||
+        value === null ||
+        value === ""
+    ) {
+
+        return "—";
+
+    }
+
+
+    const number =
+        parseNumber(value);
+
+
+    return number.toLocaleString(
+        "lv-LV",
+        {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1
+        }
+    );
+
+}
 
 
 function display(value) {
