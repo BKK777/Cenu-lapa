@@ -11,6 +11,10 @@
 
     <style>
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -49,7 +53,6 @@
             width: 100%;
             max-width: 400px;
             padding: 10px;
-            box-sizing: border-box;
             border: 1px solid #d1d5db;
             border-radius: 7px;
             font-size: 15px;
@@ -89,7 +92,7 @@
 
         th {
             background: #e5e7eb;
-            padding: 9px;
+            padding: 10px;
             text-align: left;
             white-space: nowrap;
             position: sticky;
@@ -97,7 +100,7 @@
         }
 
         td {
-            padding: 8px 9px;
+            padding: 9px 10px;
             border-bottom: 1px solid #e5e7eb;
             white-space: nowrap;
         }
@@ -107,21 +110,34 @@
             text-align: right;
         }
 
-        tr:hover {
+        tbody tr:hover td {
             background: #f9fafb;
+        }
+
+        /*
+        AKCIJAS KOLONNA
+
+        !important ir speciāli,
+        lai hover efekts nepārkrāso
+        dzelteno kolonnu.
+        */
+
+        th.akcija-column {
+            background: #f6d365 !important;
+            font-weight: bold;
+        }
+
+        td.akcija-column {
+            background: #fff3a3 !important;
+            font-weight: bold;
+        }
+
+        tbody tr:hover td.akcija-column {
+            background: #ffe875 !important;
         }
 
         .discount {
             font-weight: bold;
-        }
-
-        .akcija-column {
-            background: #fff3cd;
-            font-weight: bold;
-        }
-
-        th.akcija-column {
-            background: #f6d365;
         }
 
         .hidden {
@@ -142,6 +158,12 @@
             border-radius: 7px;
         }
 
+        .count {
+            margin-bottom: 12px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
     </style>
 
 </head>
@@ -156,6 +178,8 @@
         Automātiska cenu lapas izveide no List1
     </div>
 
+
+    <!-- FILE UPLOAD -->
 
     <div class="card">
 
@@ -179,33 +203,45 @@
     </div>
 
 
+    <!-- CONTENT -->
+
     <div
         id="content"
         class="hidden">
 
+
+        <!-- TABS -->
 
         <div class="tabs">
 
             <button
                 class="tab active"
                 data-category="supplements">
+
                 Uztura bagātinātāji
+
             </button>
 
             <button
                 class="tab"
                 data-category="cosmetics">
+
                 Kosmētika
+
             </button>
 
             <button
                 class="tab"
                 data-category="pets">
+
                 Mājdzīvnieki
+
             </button>
 
         </div>
 
+
+        <!-- SEARCH -->
 
         <div class="card">
 
@@ -218,7 +254,14 @@
         </div>
 
 
+        <!-- TABLE -->
+
         <div class="card">
+
+            <div
+                id="productCount"
+                class="count">
+            </div>
 
             <div class="table-wrapper">
 
@@ -228,11 +271,17 @@
 
                     <tr>
 
-                        <th>Art.</th>
+                        <th>
+                            Art.
+                        </th>
 
-                        <th>Produkts</th>
+                        <th>
+                            Produkts
+                        </th>
 
-                        <th>Daudzums</th>
+                        <th>
+                            Daudzums
+                        </th>
 
                         <th class="number">
                             Cena
@@ -270,7 +319,6 @@
 
                     </thead>
 
-
                     <tbody id="productRows">
                     </tbody>
 
@@ -287,10 +335,22 @@
 
 <script>
 
+/*
+==================================================
+GLOBAL DATA
+==================================================
+*/
+
 let allProducts = [];
 
 let currentCategory = "supplements";
 
+
+/*
+==================================================
+UPLOAD
+==================================================
+*/
 
 document
     .getElementById("excelFile")
@@ -302,7 +362,9 @@ document
 
 async function readExcel(event) {
 
-    const file = event.target.files[0];
+    const file =
+        event.target.files[0];
+
 
     if (!file) {
         return;
@@ -324,10 +386,12 @@ async function readExcel(event) {
             );
 
 
+        /*
+        Mēs lasām tikai List1
+        */
+
         const sheet =
-            workbook.Sheets[
-                "List1"
-            ];
+            workbook.Sheets["List1"];
 
 
         if (!sheet) {
@@ -343,17 +407,19 @@ async function readExcel(event) {
             XLSX.utils.sheet_to_json(
                 sheet,
                 {
-                    defval: ""
+                    defval: "",
+                    raw: true
                 }
             );
 
 
-        processRawData(rows);
+        processData(rows);
 
 
         document
             .getElementById("fileInfo")
             .textContent =
+
             file.name +
             " — nolasītas " +
             rows.length +
@@ -386,6 +452,7 @@ async function readExcel(event) {
         document
             .getElementById("error")
             .innerHTML =
+
             '<div class="error">' +
             error.message +
             '</div>';
@@ -395,7 +462,13 @@ async function readExcel(event) {
 }
 
 
-function processRawData(rows) {
+/*
+==================================================
+PROCESS DATA
+==================================================
+*/
+
+function processData(rows) {
 
     allProducts = [];
 
@@ -403,51 +476,103 @@ function processRawData(rows) {
     rows.forEach(row => {
 
 
-        const group =
-            String(
-                row["Group"] || ""
-            ).trim();
+        /*
+        Kategoriju vairs nemeklējam tikai
+        kolonnā "Group".
 
+        Pārbaudām VISAS rindas vērtības.
+        */
 
-        const lvGroup =
-            String(
-                row["Group_1"] ||
-                group
-            ).trim();
+        const rowText =
+            Object
+                .values(row)
+                .map(value =>
+                    String(value)
+                        .toLowerCase()
+                        .trim()
+                )
+                .join(" | ");
 
 
         let category = null;
 
 
+        /*
+        UZTURA BAGĀTINĀTĀJI
+        */
+
         if (
-            lvGroup ===
-            "1 Uztura bagātinātāji"
+
+            rowText.includes(
+                "uztura bagātināt"
+            )
+
+            ||
+
+            rowText.includes(
+                "supplement"
+            )
+
         ) {
 
-            category = "supplements";
+            category =
+                "supplements";
 
         }
+
+
+        /*
+        KOSMĒTIKA
+        */
 
         else if (
-            lvGroup ===
-            "2 Kosmētika"
+
+            rowText.includes(
+                "kosmēt"
+            )
+
+            ||
+
+            rowText.includes(
+                "cosmetic"
+            )
+
         ) {
 
-            category = "cosmetics";
+            category =
+                "cosmetics";
 
         }
+
+
+        /*
+        MĀJDZĪVNIEKI
+        */
 
         else if (
-            lvGroup ===
-            "5 Mājdzīvnieks" ||
 
-            lvGroup ===
-            "6 Mājdzīvnieks - cits"
+            rowText.includes(
+                "mājdzīv"
+            )
+
+            ||
+
+            rowText.includes(
+                "pet"
+            )
+
         ) {
 
-            category = "pets";
+            category =
+                "pets";
 
         }
+
+
+        /*
+        Ja kategorija nav atrasta,
+        šo rindu neizmantojam.
+        */
 
         else {
 
@@ -456,29 +581,43 @@ function processRawData(rows) {
         }
 
 
+        /*
+        ARTICLE
+        */
+
         const art =
-            getValue(
+            findValue(
                 row,
                 [
                     "Art. No.",
-                    "Art. No._1",
+                    "Art No",
                     "Art.",
+                    "Article",
                     "Artikel"
                 ]
             );
 
 
+        /*
+        PRODUCT NAME
+        */
+
         const product =
-            getValue(
+            findValue(
                 row,
                 [
-                    "Product Name Aesculap (ve skupinách řadit abecedně dle názvu)",
                     "Product Name Aesculap",
+                    "Product Name",
                     "Produkts",
                     "Product"
                 ]
             );
 
+
+        /*
+        Ja nav artikula vai produkta nosaukuma,
+        rindu izlaižam.
+        */
 
         if (
             !art ||
@@ -490,29 +629,47 @@ function processRawData(rows) {
         }
 
 
+        /*
+        REGULAR PRICE
+        */
+
         const regularPrice =
             parseNumber(
-                getValue(
+
+                findValue(
                     row,
                     [
+                        "Regular price",
                         "Regular price (EUR)",
                         "Cena"
                     ]
                 )
+
             );
 
+
+        /*
+        CAMPAIGN PRICE
+        */
 
         const salePrice =
             parseNumber(
-                getValue(
+
+                findValue(
                     row,
                     [
                         "Price (EUR)",
+                        "Campaign price",
                         "Akcija"
                     ]
                 )
+
             );
 
+
+        /*
+        CALCULATED DISCOUNT
+        */
 
         const discount =
             regularPrice -
@@ -520,10 +677,18 @@ function processRawData(rows) {
 
 
         const discountPercent =
+
             regularPrice > 0
-                ? discount / regularPrice
+
+                ? discount /
+                  regularPrice
+
                 : 0;
 
+
+        /*
+        ADD PRODUCT
+        */
 
         allProducts.push({
 
@@ -534,7 +699,7 @@ function processRawData(rows) {
             product,
 
             content:
-                getValue(
+                findValue(
                     row,
                     [
                         "Content",
@@ -551,16 +716,17 @@ function processRawData(rows) {
             discountPercent,
 
             periodMin:
-                getValue(
+                findValue(
                     row,
                     [
                         "For period (months) - min",
+                        "For period",
                         "Pietiek MIN"
                     ]
                 ),
 
             periodMax:
-                getValue(
+                findValue(
                     row,
                     [
                         "For period (months) - max",
@@ -569,20 +735,22 @@ function processRawData(rows) {
                 ),
 
             iddMin:
-                getValue(
+                findValue(
                     row,
                     [
                         "RDD min",
-                        "IDD MIN"
+                        "IDD MIN",
+                        "IDD min"
                     ]
                 ),
 
             iddMax:
-                getValue(
+                findValue(
                     row,
                     [
                         "RDD max",
-                        "IDD MAX"
+                        "IDD MAX",
+                        "IDD max"
                     ]
                 )
 
@@ -591,23 +759,137 @@ function processRawData(rows) {
     });
 
 
+    /*
+    PRODUCT NAME A-Z
+    */
+
     allProducts.sort(
         (a, b) =>
-            a.product.localeCompare(
-                b.product,
-                "lv"
-            )
+
+            String(a.product)
+                .localeCompare(
+                    String(b.product),
+                    "lv"
+                )
     );
 
 }
 
 
+/*
+==================================================
+SMART COLUMN SEARCH
+==================================================
+*/
+
+function findValue(
+    row,
+    possibleNames
+) {
+
+
+    const keys =
+        Object.keys(row);
+
+
+    /*
+    1. EXACT MATCH
+    */
+
+    for (
+        const wantedName
+        of possibleNames
+    ) {
+
+
+        const exactKey =
+            keys.find(key =>
+
+                key
+                    .trim()
+                    .toLowerCase()
+
+                ===
+
+                wantedName
+                    .trim()
+                    .toLowerCase()
+
+            );
+
+
+        if (
+            exactKey &&
+            row[exactKey] !== ""
+        ) {
+
+            return row[exactKey];
+
+        }
+
+    }
+
+
+    /*
+    2. PARTIAL MATCH
+
+    Piemēram:
+    "Product Name Aesculap (....)"
+    atradīs pēc "Product Name Aesculap"
+    */
+
+    for (
+        const wantedName
+        of possibleNames
+    ) {
+
+
+        const partialKey =
+            keys.find(key =>
+
+                key
+                    .trim()
+                    .toLowerCase()
+                    .includes(
+                        wantedName
+                            .trim()
+                            .toLowerCase()
+                    )
+
+            );
+
+
+        if (
+            partialKey &&
+            row[partialKey] !== ""
+        ) {
+
+            return row[partialKey];
+
+        }
+
+    }
+
+
+    return "";
+
+}
+
+
+/*
+==================================================
+TABLE
+==================================================
+*/
+
 function renderTable() {
 
+
     const tbody =
-        document.getElementById(
-            "productRows"
-        );
+        document
+            .getElementById(
+                "productRows"
+            );
 
 
     const search =
@@ -627,6 +909,10 @@ function renderTable() {
         allProducts.filter(product => {
 
 
+            /*
+            CATEGORY
+            */
+
             if (
                 product.category !==
                 currentCategory
@@ -636,6 +922,10 @@ function renderTable() {
 
             }
 
+
+            /*
+            SEARCH
+            */
 
             if (!search) {
 
@@ -652,7 +942,7 @@ function renderTable() {
 
                 ||
 
-                product.product
+                String(product.product)
                     .toLowerCase()
                     .includes(search)
 
@@ -660,6 +950,24 @@ function renderTable() {
 
         });
 
+
+    /*
+    PRODUCT COUNT
+    */
+
+    document
+        .getElementById(
+            "productCount"
+        )
+        .textContent =
+
+        "Produkti: " +
+        products.length;
+
+
+    /*
+    TABLE ROWS
+    */
 
     products.forEach(product => {
 
@@ -673,17 +981,19 @@ function renderTable() {
         row.innerHTML = `
 
             <td>
-                ${product.art}
+                ${escapeHtml(product.art)}
             </td>
 
 
             <td>
-                <b>${product.product}</b>
+                <b>
+                    ${escapeHtml(product.product)}
+                </b>
             </td>
 
 
             <td>
-                ${product.content}
+                ${escapeHtml(product.content)}
             </td>
 
 
@@ -736,6 +1046,12 @@ function renderTable() {
 }
 
 
+/*
+==================================================
+TABS
+==================================================
+*/
+
 document
     .querySelectorAll(".tab")
     .forEach(button => {
@@ -747,17 +1063,25 @@ document
 
 
                 document
-                    .querySelectorAll(".tab")
+                    .querySelectorAll(
+                        ".tab"
+                    )
                     .forEach(tab =>
-                        tab.classList.remove(
-                            "active"
-                        )
+
+                        tab
+                            .classList
+                            .remove(
+                                "active"
+                            )
+
                     );
 
 
-                this.classList.add(
-                    "active"
-                );
+                this
+                    .classList
+                    .add(
+                        "active"
+                    );
 
 
                 currentCategory =
@@ -772,6 +1096,12 @@ document
     });
 
 
+/*
+==================================================
+SEARCH
+==================================================
+*/
+
 document
     .getElementById("search")
     .addEventListener(
@@ -780,33 +1110,14 @@ document
     );
 
 
-function getValue(
-    row,
-    possibleNames
-) {
-
-    for (
-        const name
-        of possibleNames
-    ) {
-
-        if (
-            row[name] !== undefined &&
-            row[name] !== ""
-        ) {
-
-            return row[name];
-
-        }
-
-    }
-
-    return "";
-
-}
-
+/*
+==================================================
+NUMBER
+==================================================
+*/
 
 function parseNumber(value) {
+
 
     if (
         value === "" ||
@@ -819,13 +1130,26 @@ function parseNumber(value) {
     }
 
 
+    if (
+        typeof value === "number"
+    ) {
+
+        return value;
+
+    }
+
+
+    let cleaned =
+        String(value)
+            .replace(/\s/g, "")
+            .replace("€", "")
+            .replace("%", "")
+            .replace(",", ".")
+            .trim();
+
+
     const number =
-        Number(
-            String(value)
-                .replace(",", ".")
-                .replace("€", "")
-                .trim()
-        );
+        Number(cleaned);
 
 
     return isNaN(number)
@@ -834,6 +1158,12 @@ function parseNumber(value) {
 
 }
 
+
+/*
+==================================================
+EURO
+==================================================
+*/
 
 function money(value) {
 
@@ -851,10 +1181,16 @@ function money(value) {
 }
 
 
+/*
+==================================================
+PERCENT
+==================================================
+*/
+
 function percent(value) {
 
     return (
-        value * 100
+        Number(value) * 100
     ).toLocaleString(
         "lv-LV",
         {
@@ -866,12 +1202,19 @@ function percent(value) {
 }
 
 
+/*
+==================================================
+ONE DECIMAL
+==================================================
+*/
+
 function oneDecimal(value) {
 
+
     if (
-        value === undefined ||
+        value === "" ||
         value === null ||
-        value === ""
+        value === undefined
     ) {
 
         return "—";
@@ -883,23 +1226,30 @@ function oneDecimal(value) {
         parseNumber(value);
 
 
-    return number.toLocaleString(
-        "lv-LV",
-        {
-            minimumFractionDigits: 1,
-            maximumFractionDigits: 1
-        }
-    );
+    return number
+        .toLocaleString(
+            "lv-LV",
+            {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            }
+        );
 
 }
 
 
+/*
+==================================================
+DISPLAY
+==================================================
+*/
+
 function display(value) {
 
     if (
-        value === undefined ||
+        value === "" ||
         value === null ||
-        value === ""
+        value === undefined
     ) {
 
         return "—";
@@ -907,7 +1257,40 @@ function display(value) {
     }
 
 
-    return value;
+    return escapeHtml(value);
+
+}
+
+
+/*
+==================================================
+HTML SAFETY
+==================================================
+*/
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 
 }
 
