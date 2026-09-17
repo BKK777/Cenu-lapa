@@ -114,14 +114,7 @@
             background: #f9fafb;
         }
 
-        /*
-        AKCIJAS KOLONNA
-
-        !important ir speciāli,
-        lai hover efekts nepārkrāso
-        dzelteno kolonnu.
-        */
-
+        /* Entire Akcija column */
         th.akcija-column {
             background: #f6d365 !important;
             font-weight: bold;
@@ -165,7 +158,6 @@
         }
 
     </style>
-
 </head>
 
 <body>
@@ -179,8 +171,6 @@
     </div>
 
 
-    <!-- FILE UPLOAD -->
-
     <div class="card">
 
         <strong>Izvēlies Excel failu</strong>
@@ -193,55 +183,37 @@
             accept=".xlsx,.xls"
         >
 
-        <div
-            id="fileInfo"
-            class="info">
-        </div>
+        <div id="fileInfo" class="info"></div>
 
         <div id="error"></div>
 
     </div>
 
 
-    <!-- CONTENT -->
-
-    <div
-        id="content"
-        class="hidden">
-
-
-        <!-- TABS -->
+    <div id="content" class="hidden">
 
         <div class="tabs">
 
             <button
                 class="tab active"
                 data-category="supplements">
-
                 Uztura bagātinātāji
-
             </button>
 
             <button
                 class="tab"
                 data-category="cosmetics">
-
                 Kosmētika
-
             </button>
 
             <button
                 class="tab"
                 data-category="pets">
-
                 Mājdzīvnieki
-
             </button>
 
         </div>
 
-
-        <!-- SEARCH -->
 
         <div class="card">
 
@@ -254,14 +226,9 @@
         </div>
 
 
-        <!-- TABLE -->
-
         <div class="card">
 
-            <div
-                id="productCount"
-                class="count">
-            </div>
+            <div id="productCount" class="count"></div>
 
             <div class="table-wrapper">
 
@@ -271,17 +238,11 @@
 
                     <tr>
 
-                        <th>
-                            Art.
-                        </th>
+                        <th>Art.</th>
 
-                        <th>
-                            Produkts
-                        </th>
+                        <th>Produkts</th>
 
-                        <th>
-                            Daudzums
-                        </th>
+                        <th>Daudzums</th>
 
                         <th class="number">
                             Cena
@@ -319,8 +280,7 @@
 
                     </thead>
 
-                    <tbody id="productRows">
-                    </tbody>
+                    <tbody id="productRows"></tbody>
 
                 </table>
 
@@ -335,22 +295,10 @@
 
 <script>
 
-/*
-==================================================
-GLOBAL DATA
-==================================================
-*/
-
 let allProducts = [];
 
 let currentCategory = "supplements";
 
-
-/*
-==================================================
-UPLOAD
-==================================================
-*/
 
 document
     .getElementById("excelFile")
@@ -362,9 +310,7 @@ document
 
 async function readExcel(event) {
 
-    const file =
-        event.target.files[0];
-
+    const file = event.target.files[0];
 
     if (!file) {
         return;
@@ -386,10 +332,6 @@ async function readExcel(event) {
             );
 
 
-        /*
-        Mēs lasām tikai List1
-        */
-
         const sheet =
             workbook.Sheets["List1"];
 
@@ -403,10 +345,17 @@ async function readExcel(event) {
         }
 
 
+        /*
+        IMPORTANT:
+        Real headers are on row 2.
+        range: 1 means start from Excel row 2.
+        */
+
         const rows =
             XLSX.utils.sheet_to_json(
                 sheet,
                 {
+                    range: 1,
                     defval: "",
                     raw: true
                 }
@@ -419,7 +368,6 @@ async function readExcel(event) {
         document
             .getElementById("fileInfo")
             .textContent =
-
             file.name +
             " — nolasītas " +
             rows.length +
@@ -452,7 +400,6 @@ async function readExcel(event) {
         document
             .getElementById("error")
             .innerHTML =
-
             '<div class="error">' +
             error.message +
             '</div>';
@@ -462,12 +409,6 @@ async function readExcel(event) {
 }
 
 
-/*
-==================================================
-PROCESS DATA
-==================================================
-*/
-
 function processData(rows) {
 
     allProducts = [];
@@ -475,104 +416,50 @@ function processData(rows) {
 
     rows.forEach(row => {
 
-
         /*
-        Kategoriju vairs nemeklējam tikai
-        kolonnā "Group".
-
-        Pārbaudām VISAS rindas vērtības.
+        There are two "Group" columns.
+        SheetJS renames the second one to Group_1.
+        The second one is the Latvian group.
         */
 
-        const rowText =
-            Object
-                .values(row)
-                .map(value =>
-                    String(value)
-                        .toLowerCase()
-                        .trim()
-                )
-                .join(" | ");
+        const lvGroup =
+            String(
+                row["Group_1"] || ""
+            ).trim();
 
 
         let category = null;
 
 
-        /*
-        UZTURA BAGĀTINĀTĀJI
-        */
-
         if (
-
-            rowText.includes(
-                "uztura bagātināt"
-            )
-
-            ||
-
-            rowText.includes(
-                "supplement"
-            )
-
+            lvGroup ===
+            "1 Uztura bagātinātāji"
         ) {
 
-            category =
-                "supplements";
+            category = "supplements";
 
         }
-
-
-        /*
-        KOSMĒTIKA
-        */
 
         else if (
-
-            rowText.includes(
-                "kosmēt"
-            )
-
-            ||
-
-            rowText.includes(
-                "cosmetic"
-            )
-
+            lvGroup ===
+            "2 Kosmētika"
         ) {
 
-            category =
-                "cosmetics";
+            category = "cosmetics";
 
         }
-
-
-        /*
-        MĀJDZĪVNIEKI
-        */
 
         else if (
-
-            rowText.includes(
-                "mājdzīv"
-            )
-
+            lvGroup ===
+            "5 Mājdzīvnieks"
             ||
-
-            rowText.includes(
-                "pet"
-            )
-
+            lvGroup ===
+            "6 Mājdzīvnieks - cits"
         ) {
 
-            category =
-                "pets";
+            category = "pets";
 
         }
-
-
-        /*
-        Ja kategorija nav atrasta,
-        šo rindu neizmantojam.
-        */
 
         else {
 
@@ -581,47 +468,19 @@ function processData(rows) {
         }
 
 
-        /*
-        ARTICLE
-        */
-
         const art =
-            findValue(
-                row,
-                [
-                    "Art. No.",
-                    "Art No",
-                    "Art.",
-                    "Article",
-                    "Artikel"
-                ]
-            );
+            row["Art. No."];
 
-
-        /*
-        PRODUCT NAME
-        */
 
         const product =
-            findValue(
-                row,
-                [
-                    "Product Name Aesculap",
-                    "Product Name",
-                    "Produkts",
-                    "Product"
-                ]
-            );
+            row[
+                "Product Name Aesculap (ve skupinách řadit abecedně dle názvu)"
+            ];
 
-
-        /*
-        Ja nav artikula vai produkta nosaukuma,
-        rindu izlaižam.
-        */
 
         if (
-            !art ||
-            !product
+            art === "" ||
+            product === ""
         ) {
 
             return;
@@ -629,47 +488,17 @@ function processData(rows) {
         }
 
 
-        /*
-        REGULAR PRICE
-        */
-
         const regularPrice =
             parseNumber(
-
-                findValue(
-                    row,
-                    [
-                        "Regular price",
-                        "Regular price (EUR)",
-                        "Cena"
-                    ]
-                )
-
+                row["Regular price (EUR)"]
             );
 
-
-        /*
-        CAMPAIGN PRICE
-        */
 
         const salePrice =
             parseNumber(
-
-                findValue(
-                    row,
-                    [
-                        "Price (EUR)",
-                        "Campaign price",
-                        "Akcija"
-                    ]
-                )
-
+                row["Price (EUR)"]
             );
 
-
-        /*
-        CALCULATED DISCOUNT
-        */
 
         const discount =
             regularPrice -
@@ -677,18 +506,10 @@ function processData(rows) {
 
 
         const discountPercent =
-
             regularPrice > 0
-
-                ? discount /
-                  regularPrice
-
+                ? discount / regularPrice
                 : 0;
 
-
-        /*
-        ADD PRODUCT
-        */
 
         allProducts.push({
 
@@ -699,13 +520,7 @@ function processData(rows) {
             product,
 
             content:
-                findValue(
-                    row,
-                    [
-                        "Content",
-                        "Daudzums"
-                    ]
-                ),
+                row["Content"],
 
             regularPrice,
 
@@ -716,56 +531,28 @@ function processData(rows) {
             discountPercent,
 
             periodMin:
-                findValue(
-                    row,
-                    [
-                        "For period (months) - min",
-                        "For period",
-                        "Pietiek MIN"
-                    ]
-                ),
+                row[
+                    "For period (months) - min"
+                ],
 
             periodMax:
-                findValue(
-                    row,
-                    [
-                        "For period (months) - max",
-                        "Pietiek MAX"
-                    ]
-                ),
+                row[
+                    "For period (months) - max"
+                ],
 
             iddMin:
-                findValue(
-                    row,
-                    [
-                        "RDD min",
-                        "IDD MIN",
-                        "IDD min"
-                    ]
-                ),
+                row["RDD min"],
 
             iddMax:
-                findValue(
-                    row,
-                    [
-                        "RDD max",
-                        "IDD MAX",
-                        "IDD max"
-                    ]
-                )
+                row["RDD max"]
 
         });
 
     });
 
 
-    /*
-    PRODUCT NAME A-Z
-    */
-
     allProducts.sort(
         (a, b) =>
-
             String(a.product)
                 .localeCompare(
                     String(b.product),
@@ -776,120 +563,12 @@ function processData(rows) {
 }
 
 
-/*
-==================================================
-SMART COLUMN SEARCH
-==================================================
-*/
-
-function findValue(
-    row,
-    possibleNames
-) {
-
-
-    const keys =
-        Object.keys(row);
-
-
-    /*
-    1. EXACT MATCH
-    */
-
-    for (
-        const wantedName
-        of possibleNames
-    ) {
-
-
-        const exactKey =
-            keys.find(key =>
-
-                key
-                    .trim()
-                    .toLowerCase()
-
-                ===
-
-                wantedName
-                    .trim()
-                    .toLowerCase()
-
-            );
-
-
-        if (
-            exactKey &&
-            row[exactKey] !== ""
-        ) {
-
-            return row[exactKey];
-
-        }
-
-    }
-
-
-    /*
-    2. PARTIAL MATCH
-
-    Piemēram:
-    "Product Name Aesculap (....)"
-    atradīs pēc "Product Name Aesculap"
-    */
-
-    for (
-        const wantedName
-        of possibleNames
-    ) {
-
-
-        const partialKey =
-            keys.find(key =>
-
-                key
-                    .trim()
-                    .toLowerCase()
-                    .includes(
-                        wantedName
-                            .trim()
-                            .toLowerCase()
-                    )
-
-            );
-
-
-        if (
-            partialKey &&
-            row[partialKey] !== ""
-        ) {
-
-            return row[partialKey];
-
-        }
-
-    }
-
-
-    return "";
-
-}
-
-
-/*
-==================================================
-TABLE
-==================================================
-*/
-
 function renderTable() {
 
-
     const tbody =
-        document
-            .getElementById(
-                "productRows"
-            );
+        document.getElementById(
+            "productRows"
+        );
 
 
     const search =
@@ -909,10 +588,6 @@ function renderTable() {
         allProducts.filter(product => {
 
 
-            /*
-            CATEGORY
-            */
-
             if (
                 product.category !==
                 currentCategory
@@ -922,10 +597,6 @@ function renderTable() {
 
             }
 
-
-            /*
-            SEARCH
-            */
 
             if (!search) {
 
@@ -951,26 +622,16 @@ function renderTable() {
         });
 
 
-    /*
-    PRODUCT COUNT
-    */
-
     document
         .getElementById(
             "productCount"
         )
         .textContent =
-
         "Produkti: " +
         products.length;
 
 
-    /*
-    TABLE ROWS
-    */
-
     products.forEach(product => {
-
 
         const row =
             document.createElement(
@@ -1046,42 +707,26 @@ function renderTable() {
 }
 
 
-/*
-==================================================
-TABS
-==================================================
-*/
-
 document
     .querySelectorAll(".tab")
     .forEach(button => {
-
 
         button.addEventListener(
             "click",
             function() {
 
-
                 document
-                    .querySelectorAll(
-                        ".tab"
-                    )
+                    .querySelectorAll(".tab")
                     .forEach(tab =>
-
-                        tab
-                            .classList
-                            .remove(
-                                "active"
-                            )
-
+                        tab.classList.remove(
+                            "active"
+                        )
                     );
 
 
-                this
-                    .classList
-                    .add(
-                        "active"
-                    );
+                this.classList.add(
+                    "active"
+                );
 
 
                 currentCategory =
@@ -1096,12 +741,6 @@ document
     });
 
 
-/*
-==================================================
-SEARCH
-==================================================
-*/
-
 document
     .getElementById("search")
     .addEventListener(
@@ -1110,14 +749,7 @@ document
     );
 
 
-/*
-==================================================
-NUMBER
-==================================================
-*/
-
 function parseNumber(value) {
-
 
     if (
         value === "" ||
@@ -1139,17 +771,14 @@ function parseNumber(value) {
     }
 
 
-    let cleaned =
-        String(value)
-            .replace(/\s/g, "")
-            .replace("€", "")
-            .replace("%", "")
-            .replace(",", ".")
-            .trim();
-
-
     const number =
-        Number(cleaned);
+        Number(
+            String(value)
+                .replace(/\s/g, "")
+                .replace("€", "")
+                .replace(",", ".")
+                .trim()
+        );
 
 
     return isNaN(number)
@@ -1158,12 +787,6 @@ function parseNumber(value) {
 
 }
 
-
-/*
-==================================================
-EURO
-==================================================
-*/
 
 function money(value) {
 
@@ -1181,12 +804,6 @@ function money(value) {
 }
 
 
-/*
-==================================================
-PERCENT
-==================================================
-*/
-
 function percent(value) {
 
     return (
@@ -1194,7 +811,6 @@ function percent(value) {
     ).toLocaleString(
         "lv-LV",
         {
-            minimumFractionDigits: 0,
             maximumFractionDigits: 0
         }
     ) + "%";
@@ -1202,14 +818,7 @@ function percent(value) {
 }
 
 
-/*
-==================================================
-ONE DECIMAL
-==================================================
-*/
-
 function oneDecimal(value) {
-
 
     if (
         value === "" ||
@@ -1222,11 +831,7 @@ function oneDecimal(value) {
     }
 
 
-    const number =
-        parseNumber(value);
-
-
-    return number
+    return parseNumber(value)
         .toLocaleString(
             "lv-LV",
             {
@@ -1237,12 +842,6 @@ function oneDecimal(value) {
 
 }
 
-
-/*
-==================================================
-DISPLAY
-==================================================
-*/
 
 function display(value) {
 
@@ -1262,35 +861,14 @@ function display(value) {
 }
 
 
-/*
-==================================================
-HTML SAFETY
-==================================================
-*/
-
 function escapeHtml(value) {
 
     return String(value)
-        .replaceAll(
-            "&",
-            "&amp;"
-        )
-        .replaceAll(
-            "<",
-            "&lt;"
-        )
-        .replaceAll(
-            ">",
-            "&gt;"
-        )
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-        .replaceAll(
-            "'",
-            "&#039;"
-        );
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 
 }
 
